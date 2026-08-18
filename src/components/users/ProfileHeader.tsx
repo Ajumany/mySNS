@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import FollowButton from './FollowButton';
+import FollowListModal from './FollowListModal';
 
 type ProfileHeaderProps = {
   profile: {
@@ -27,6 +29,7 @@ export default function ProfileHeader({
   onFollowChange,
 }: ProfileHeaderProps) {
   const router = useRouter();
+  const [modalType, setModalType] = useState<'following' | 'followers' | null>(null);
 
   return (
     <div>
@@ -64,17 +67,34 @@ export default function ProfileHeader({
           <p className="text-xs font-mono text-gray-400">ID: {profile.id}</p>
         </div>
 
-        <div className="mt-4 flex gap-4 text-sm text-gray-600">
-          <div>
+        {/* フォロー中・フォロワーのクリック可能な数値エリア */}
+        <div className="mt-4 flex gap-4 text-sm">
+          <button
+            type="button"
+            onClick={() => setModalType('following')}
+            className="hover:underline text-left"
+          >
             <span className="font-bold text-gray-900">{stats.followingCount}</span>{' '}
             <span className="text-gray-500">フォロー中</span>
-          </div>
-          <div>
+          </button>
+          <button
+            type="button"
+            onClick={() => setModalType('followers')}
+            className="hover:underline text-left"
+          >
             <span className="font-bold text-gray-900">{stats.followersCount}</span>{' '}
             <span className="text-gray-500">フォロワー</span>
-          </div>
+          </button>
         </div>
       </div>
+
+      {/* フォロー・フォロワー一覧モーダル */}
+      <FollowListModal
+        isOpen={modalType !== null}
+        onClose={() => setModalType(null)}
+        userId={profile.id}
+        type={modalType || 'following'}
+      />
     </div>
   );
 }

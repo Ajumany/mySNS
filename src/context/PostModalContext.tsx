@@ -6,12 +6,19 @@ type PostModalContextType = {
   isOpen: boolean;
   openModal: () => void;
   closeModal: () => void;
+  refreshKey: number;
+  triggerRefresh: () => void;
 };
 
 const PostModalContext = createContext<PostModalContextType | undefined>(undefined);
 
 export function PostModalProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const triggerRefresh = () => {
+    setRefreshKey((prev) => prev + 1);
+  };
 
   return (
     <PostModalContext.Provider
@@ -19,6 +26,8 @@ export function PostModalProvider({ children }: { children: ReactNode }) {
         isOpen,
         openModal: () => setIsOpen(true),
         closeModal: () => setIsOpen(false),
+        refreshKey,
+        triggerRefresh,
       }}
     >
       {children}

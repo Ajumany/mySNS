@@ -1,14 +1,26 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Home, Search, Settings, LogOut, Feather } from 'lucide-react';
+import { Home, Search, User, Settings, LogOut, Feather } from 'lucide-react';
 import { usePostModal } from '@/context/PostModalContext';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 export default function Sidebar() {
   const { openModal } = usePostModal();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    async function loadUser() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) setCurrentUserId(user.id);
+    }
+    loadUser();
+  }, []);
 
   const handleSignOut = async () => {
     if (!confirm('ログアウトしますか？')) return;
@@ -37,6 +49,13 @@ export default function Sidebar() {
           >
             <Search className="h-6 w-6" />
             検索
+          </Link>
+          <Link
+            href={currentUserId ? `/users/${currentUserId}` : '/login'}
+            className="flex items-center gap-4 rounded-full px-4 py-3 text-lg font-medium text-gray-800 transition hover:bg-gray-100"
+          >
+            <User className="h-6 w-6" />
+            プロフィール
           </Link>
           <Link
             href="/settings"

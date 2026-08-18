@@ -4,13 +4,11 @@ import { useState } from 'react';
 import { X, Send } from 'lucide-react';
 import { usePostModal } from '@/context/PostModalContext';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
 
 export default function PostModal() {
-  const { isOpen, closeModal } = usePostModal();
+  const { isOpen, closeModal, triggerRefresh } = usePostModal();
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const router = useRouter();
 
   if (!isOpen) return null;
 
@@ -35,9 +33,10 @@ export default function PostModal() {
 
       setContent('');
       closeModal();
-      router.refresh(); // タイムライン再取得
+      triggerRefresh(); // タイムラインを自動更新
     } catch (err) {
       console.error('Post creation failed:', err);
+      alert('投稿に失敗しました。');
     } finally {
       setIsSubmitting(false);
     }

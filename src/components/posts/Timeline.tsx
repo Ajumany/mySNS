@@ -2,15 +2,16 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { usePostModal } from '@/context/PostModalContext';
 import PostCard, { PostItem } from './PostCard';
 
 export default function Timeline() {
+  const { refreshKey } = usePostModal();
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchTimeline = useCallback(async () => {
-    setLoading(true);
     try {
       const {
         data: { user },
@@ -19,7 +20,7 @@ export default function Timeline() {
       if (!user) return;
       setCurrentUserId(user.id);
 
-      // 1. フォローしているユーザーのID一覧を取得
+      // 1. フォローしているユーザー一覧を取得
       const { data: followings, error: followError } = await supabase
         .from('follows')
         .select('following_id')
@@ -32,7 +33,7 @@ export default function Timeline() {
         ...(followings?.map((f) => f.following_id) || []),
       ];
 
-      // 2. 自分 + フォロー中ユーザーの投稿を取得（最新50件）
+      // 2. 自分 + フォロー中ユーザーの投稿を取得
       const { data: timelinePosts, error: postsError } = await supabase
         .from('posts')
         .select(`
@@ -51,7 +52,6 @@ export default function Timeline() {
 
       if (postsError) throw postsError;
 
-      // Supabaseのネスト結果の型補正
       setPosts((timelinePosts as unknown as PostItem[]) || []);
     } catch (err) {
       console.error('Failed to fetch timeline:', err);
@@ -60,9 +60,10 @@ export default function Timeline() {
     }
   }, []);
 
+  // 初回読み込みおよび投稿追加・削除時に実行
   useEffect(() => {
     fetchTimeline();
-  }, [fetchTimeline]);
+  }, [fetchTimeline, refreshKey]);
 
   const handleDeletePost = (deletedPostId: string) => {
     setPosts((prev) => prev.filter((p) => p.id !== deletedPostId));
