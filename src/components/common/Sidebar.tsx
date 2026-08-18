@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, Settings, LogOut, Feather } from 'lucide-react';
+import { Home, Search, Settings, LogOut, Feather } from 'lucide-react';
 import { usePostModal } from '@/context/PostModalContext';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
@@ -11,6 +11,7 @@ export default function Sidebar() {
   const router = useRouter();
 
   const handleSignOut = async () => {
+    if (!confirm('ログアウトしますか？')) return;
     await supabase.auth.signOut();
     router.push('/login');
   };
@@ -29,6 +30,13 @@ export default function Sidebar() {
           >
             <Home className="h-6 w-6" />
             ホーム
+          </Link>
+          <Link
+            href="/search"
+            className="flex items-center gap-4 rounded-full px-4 py-3 text-lg font-medium text-gray-800 transition hover:bg-gray-100"
+          >
+            <Search className="h-6 w-6" />
+            検索
           </Link>
           <Link
             href="/settings"

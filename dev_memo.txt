@@ -1,0 +1,8 @@
+# 1. 変更したファイルをステージング
+git add .
+
+# 2. 変更内容をコミット
+git commit -m "fix: 変更内容の要約"
+
+# 3. GitHubのmainブランチにプッシュ（これでVercelが自動デプロイを開始）
+git push origin main

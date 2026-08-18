@@ -76,6 +76,13 @@ export default function SettingsPage() {
     }
   };
 
+  // ログアウト処理
+  const handleSignOut = async () => {
+    if (!confirm('ログアウトしますか？')) return;
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
+
   if (loading) {
     return (
       <div className="p-8 text-center text-sm text-gray-500">
@@ -141,7 +148,18 @@ export default function SettingsPage() {
             </button>
           </div>
         </form>
+
+        {/* ログアウトボタンエリア */}
+        <div className="mt-8 border-t border-gray-200 pt-6">
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="w-full rounded-lg border border-red-200 py-2.5 text-sm font-bold text-red-600 transition hover:bg-red-50"
+          >
+            ログアウト
+          </button>
+        </div>
       </div>
     </div>
   );
-} /* */
+}
