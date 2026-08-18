@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Trash2, Heart, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -10,10 +11,13 @@ export type PostItem = {
   content: string;
   created_at: string;
   user_id: string;
+  reply_to_id?: string | null;
   profiles: {
     id: string;
     display_name: string;
   } | null;
+  likes?: { user_id: string }[];
+  replies?: { id: string }[];
 };
 
 type PostCardProps = {
@@ -22,7 +26,6 @@ type PostCardProps = {
   onDelete?: (postId: string) => void;
 };
 
-// 相対時刻フォーマット用ヘルパー
 function formatRelativeTime(dateString: string) {
   const now = new Date();
   const date = new Date(dateString);
@@ -43,10 +46,57 @@ function formatRelativeTime(dateString: string) {
 }
 
 export default function PostCard({ post, currentUserId, onDelete }: PostCardProps) {
-  const [isDeleting, setIsDeleting] = useState(false);
+  const router = useRouter();
   const isAuthor = currentUserId === post.user_id;
 
-  const handleDelete = async () => {
+  // いいね状態
+  const initialIsLiked = post.likes?.some((l) => l.user_id === currentUserId) ?? false;
+  const [isLiked, setIsLiked] = useState(initialIsLiked);
+  const [likesCount, setLikesCount] = useState(post.likes?.length ?? 0);
+  const [isLiking, setIsLiking] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const repliesCount = post.replies?.length ?? 0;
+  const displayName = post.profiles?.display_name || '名称未設定';
+
+  // いいねのトグル
+  const handleToggleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!currentUserId || isLiking) return;
+
+    setIsLiking(true);
+    const nextState = !isLiked;
+    setIsLiked(nextState);
+    setLikesCount((prev) => (nextState ? prev + 1 : Math.max(0, prev - 1)));
+
+    try {
+      if (nextState) {
+        const { error } = await supabase.from('likes').insert({
+          post_id: post.id,
+          user_id: currentUserId,
+        });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('likes')
+          .delete()
+          .eq('post_id', post.id)
+          .eq('user_id', currentUserId);
+        if (error) throw error;
+      }
+    } catch (err) {
+      console.error('Failed to toggle like:', err);
+      // ロールバック
+      setIsLiked(!nextState);
+      setLikesCount((prev) => (!nextState ? prev + 1 : Math.max(0, prev - 1)));
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
+  // 投稿削除
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!confirm('この投稿を削除しますか？') || isDeleting) return;
 
     setIsDeleting(true);
@@ -66,12 +116,18 @@ export default function PostCard({ post, currentUserId, onDelete }: PostCardProp
     }
   };
 
-  const displayName = post.profiles?.display_name || '名称未設定';
+  // カードクリックで詳細（スレッド）画面へ
+  const handleCardClick = () => {
+    router.push(`/posts/${post.id}`);
+  };
 
   return (
-    <article className="flex border-b border-gray-200 p-4 transition hover:bg-gray-50/50">
-      {/* 簡易アバター（イニシャル） */}
-      <div className="mr-3 flex-shrink-0">
+    <article
+      onClick={handleCardClick}
+      className="flex cursor-pointer border-b border-gray-200 p-4 transition hover:bg-gray-50/60"
+    >
+      {/* アバター */}
+      <div className="mr-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
         <Link
           href={`/users/${post.user_id}`}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 text-sm font-bold text-sky-600 hover:opacity-80"
@@ -80,10 +136,10 @@ export default function PostCard({ post, currentUserId, onDelete }: PostCardProp
         </Link>
       </div>
 
-      {/* 本文エリア */}
+      {/* コンテンツ */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 truncate">
+          <div className="flex items-center gap-1.5 truncate" onClick={(e) => e.stopPropagation()}>
             <Link
               href={`/users/${post.user_id}`}
               className="truncate font-bold text-gray-900 hover:underline"
@@ -96,7 +152,6 @@ export default function PostCard({ post, currentUserId, onDelete }: PostCardProp
             </span>
           </div>
 
-          {/* 投稿者本人の場合のみ削除ボタンを表示 */}
           {isAuthor && (
             <button
               onClick={handleDelete}
@@ -109,10 +164,43 @@ export default function PostCard({ post, currentUserId, onDelete }: PostCardProp
           )}
         </div>
 
-        {/* 投稿テキスト */}
         <p className="mt-1 whitespace-pre-wrap break-words text-[15px] text-gray-800 leading-relaxed">
           {post.content}
         </p>
+
+        {/* アクションボタン群（リプライ & いいね） */}
+        <div className="mt-3 flex items-center gap-8 text-gray-500 text-xs">
+          {/* リプライボタン */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/posts/${post.id}`);
+            }}
+            className="flex items-center gap-1.5 hover:text-sky-500 transition group"
+          >
+            <div className="rounded-full p-1.5 group-hover:bg-sky-50">
+              <MessageCircle className="h-4 w-4" />
+            </div>
+            <span>{repliesCount}</span>
+          </button>
+
+          {/* いいねボタン */}
+          <button
+            onClick={handleToggleLike}
+            className={`flex items-center gap-1.5 transition group ${
+              isLiked ? 'text-pink-600' : 'hover:text-pink-600'
+            }`}
+          >
+            <div className="rounded-full p-1.5 group-hover:bg-pink-50">
+              <Heart
+                className={`h-4 w-4 transition ${
+                  isLiked ? 'fill-pink-600 text-pink-600' : ''
+                }`}
+              />
+            </div>
+            <span>{likesCount}</span>
+          </button>
+        </div>
       </div>
     </article>
   );

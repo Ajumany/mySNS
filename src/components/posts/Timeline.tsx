@@ -20,7 +20,7 @@ export default function Timeline() {
       if (!user) return;
       setCurrentUserId(user.id);
 
-      // 1. フォローしているユーザー一覧を取得
+      // フォロー中のID一覧を取得
       const { data: followings, error: followError } = await supabase
         .from('follows')
         .select('following_id')
@@ -33,7 +33,7 @@ export default function Timeline() {
         ...(followings?.map((f) => f.following_id) || []),
       ];
 
-      // 2. 自分 + フォロー中ユーザーの投稿を取得
+      // 親投稿（reply_to_id is null）かつ 自分+フォロー中 の投稿を取得
       const { data: timelinePosts, error: postsError } = await supabase
         .from('posts')
         .select(`
@@ -41,11 +41,19 @@ export default function Timeline() {
           content,
           created_at,
           user_id,
+          reply_to_id,
           profiles (
             id,
             display_name
+          ),
+          likes (
+            user_id
+          ),
+          replies:posts!reply_to_id (
+            id
           )
         `)
+        .is('reply_to_id', null)
         .in('user_id', targetIds)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -60,7 +68,6 @@ export default function Timeline() {
     }
   }, []);
 
-  // 初回読み込みおよび投稿追加・削除時に実行
   useEffect(() => {
     fetchTimeline();
   }, [fetchTimeline, refreshKey]);

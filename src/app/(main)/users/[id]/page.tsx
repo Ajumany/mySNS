@@ -99,12 +99,20 @@ export default function UserDetailPage({
           content,
           created_at,
           user_id,
+          reply_to_id,
           profiles (
             id,
             display_name
+          ),
+          likes (
+            user_id
+          ),
+          replies:posts!reply_to_id (
+            id
           )
         `)
         .eq('user_id', targetUserId)
+        .is('reply_to_id', null) // 親投稿のみ表示
         .order('created_at', { ascending: false });
 
       if (postsError) throw postsError;
