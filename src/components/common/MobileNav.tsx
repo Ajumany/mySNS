@@ -25,13 +25,6 @@ export default function MobileNav() {
       <Link href="/settings" className="p-2 text-gray-700 hover:text-sky-500" aria-label="設定">
         <Settings className="h-6 w-6" />
       </Link>
-      <button
-        onClick={handleSignOut}
-        className="p-2 text-red-600 hover:text-red-700"
-        aria-label="ログアウト"
-      >
-        <LogOut className="h-6 w-6" />
-      </button>
     </nav>
   );
 }
