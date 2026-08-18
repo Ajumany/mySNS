@@ -78,10 +78,10 @@ export default function SettingsPage() {
 
   // ログアウト処理
   const handleSignOut = async () => {
-    if (!confirm('ログアウトしますか？')) return;
-    await supabase.auth.signOut();
-    router.push('/login');
-  };
+  if (!confirm('ログアウトしますか？')) return;
+  await supabase.auth.signOut();
+  window.location.href = '/login'; // キャッシュを破棄して確実に画面遷移
+};
 
   if (loading) {
     return (

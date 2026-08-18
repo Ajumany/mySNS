@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { MailCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const [displayName, setDisplayName] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isMailSent, setIsMailSent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,29 +22,33 @@ export default function LoginPage() {
 
     try {
       if (isSignUp) {
-        // 新規登録
         if (!displayName.trim()) {
           throw new Error('表示名を入力してください。');
         }
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: { display_name: displayName.trim() },
+            // メールリンクの遷移先をコールバックAPIに指定
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
         });
         if (error) throw error;
-        router.push('/');
-        router.refresh();
+
+        // メール確認が必要な場合（セッションがまだ null の場合）
+        if (data.user && !data.session) {
+          setIsMailSent(true);
+        } else {
+          window.location.href = '/';
+        }
       } else {
-        // ログイン
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
-        router.push('/');
-        router.refresh();
+        window.location.href = '/';
       }
     } catch (err: any) {
       setErrorMsg(err.message || '認証エラーが発生しました。');
@@ -50,6 +56,32 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  // メール送信完了時の表示画面
+  if (isMailSent) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+        <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-md">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-sky-100 text-sky-600">
+            <MailCheck className="h-6 w-6" />
+          </div>
+          <h2 className="text-lg font-bold text-gray-900">確認メールを送信しました</h2>
+          <p className="mt-2 text-xs text-gray-500 leading-relaxed">
+            <strong className="text-gray-700">{email}</strong> 宛に認証リンクを送信しました。メール内のリンクをクリックすると自動的にログインが完了します。
+          </p>
+          <button
+            onClick={() => {
+              setIsMailSent(false);
+              setIsSignUp(false);
+            }}
+            className="mt-6 text-xs text-sky-600 hover:underline font-bold"
+          >
+            ログイン画面に戻る
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">

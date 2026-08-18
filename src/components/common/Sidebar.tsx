@@ -23,9 +23,9 @@ export default function Sidebar() {
   }, []);
 
   const handleSignOut = async () => {
-    if (!confirm('ログアウトしますか？')) return;
-    await supabase.auth.signOut();
-    router.push('/login');
+  if (!confirm('ログアウトしますか？')) return;
+  await supabase.auth.signOut();
+  window.location.href = '/login';
   };
 
   return (
