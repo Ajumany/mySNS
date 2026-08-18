@@ -167,7 +167,7 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              // placeholder="••••••••"
               className="mt-1 w-full rounded-lg border border-gray-300 p-2.5 text-sm text-gray-900 bg-white outline-none focus:border-sky-500"
             />
           </div>

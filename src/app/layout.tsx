@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'SNS',
-  description: '身内向けSNS',
+  title: 'mySNS',
+  description: 'ほぼTwitter',
 };
 
 export default function RootLayout({
