@@ -87,7 +87,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-md">
         <h1 className="mb-6 text-center text-2xl font-black text-sky-500">
-          SNS
+          mySNS
         </h1>
 
         <div className="mb-6 flex border-b border-gray-200">
@@ -131,15 +131,15 @@ export default function LoginPage() {
           {isSignUp && (
             <div>
               <label className="block text-xs font-bold text-gray-700">
-                表示名
+                ユーザー名
               </label>
               <input
                 type="text"
                 required
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="例: たろう"
-                className="mt-1 w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-sky-500"
+                placeholder="例: あずま"
+                className="mt-1 w-full rounded-lg border border-gray-300 p-2.5 text-sm text-gray-900 bg-white outline-none focus:border-sky-500"
               />
             </div>
           )}
@@ -154,7 +154,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@example.com"
-              className="mt-1 w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-sky-500"
+              className="mt-1 w-full rounded-lg border border-gray-300 p-2.5 text-sm text-gray-900 bg-white outline-none focus:border-sky-500"
             />
           </div>
 
@@ -168,7 +168,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="mt-1 w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-sky-500"
+              className="mt-1 w-full rounded-lg border border-gray-300 p-2.5 text-sm text-gray-900 bg-white outline-none focus:border-sky-500"
             />
           </div>
 
