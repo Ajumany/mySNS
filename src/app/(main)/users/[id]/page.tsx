@@ -98,6 +98,7 @@ export default function UserDetailPage({
         .select(`
           id,
           content,
+          images,
           created_at,
           user_id,
           reply_to_id,
