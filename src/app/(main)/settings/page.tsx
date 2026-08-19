@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, Camera, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Avatar from '@/components/common/Avatar';
+import ImageCropperModal from '@/components/users/ImageCropperModal';
 
 const MAX_DISPLAY_NAME_LENGTH = 50;
-const MAX_AVATAR_SIZE = 2 * 1024 * 1024; // 2MB
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export default function SettingsPage() {
@@ -18,6 +18,11 @@ export default function SettingsPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // クロップモーダル用 state
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [rawImageSrc, setRawImageSrc] = useState<string | null>(null);
+  const [rawFileName, setRawFileName] = useState('avatar.jpg');
 
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,27 +65,34 @@ export default function SettingsPage() {
     loadProfile();
   }, [router]);
 
-  // 画像ファイル選択処理
+  // 画像ファイル選択処理（クロップモーダルを開く）
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setErrorMsg('');
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // ファイル形式バリデーション
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    // ファイル形式バリデーション（MIMEタイプまたは拡張子）
+    const isImage = file.type.startsWith('image/') || ALLOWED_IMAGE_TYPES.includes(file.type);
+    if (!isImage) {
       setErrorMsg('JPG、PNG、WebP、GIF形式の画像を選択してください。');
       return;
     }
 
-    // ファイルサイズバリデーション (2MB上限)
-    if (file.size > MAX_AVATAR_SIZE) {
-      setErrorMsg('画像サイズは2MB以下にしてください。');
-      return;
-    }
-
-    setAvatarFile(file);
+    setRawFileName(file.name);
     const objectUrl = URL.createObjectURL(file);
-    setPreviewUrl(objectUrl);
+    setRawImageSrc(objectUrl);
+    setCropModalOpen(true);
+
+    // 同じファイルを再選択できるようにリセット
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // クロップ完了時
+  const handleCropComplete = (croppedFile: File, newPreviewUrl: string) => {
+    setAvatarFile(croppedFile);
+    setPreviewUrl(newPreviewUrl);
   };
 
   // 画像の削除（頭文字デフォルトに戻す）
@@ -241,15 +253,12 @@ export default function SettingsPage() {
                     </button>
                   )}
                 </div>
-                <p className="text-xs text-gray-400">
-                  2MB以下の JPG / PNG / WebP / GIF
-                </p>
               </div>
 
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
+                accept="image/*"
                 onChange={handleFileChange}
                 className="hidden"
               />
@@ -297,6 +306,15 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>
+
+      {/* 画像クロップモーダル */}
+      <ImageCropperModal
+        imageSrc={rawImageSrc}
+        fileName={rawFileName}
+        isOpen={cropModalOpen}
+        onClose={() => setCropModalOpen(false)}
+        onCropComplete={handleCropComplete}
+      />
     </div>
   );
 }
