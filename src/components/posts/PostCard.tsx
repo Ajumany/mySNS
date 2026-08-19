@@ -124,7 +124,7 @@ export default function PostCard({ post, currentUserId, onDelete }: PostCardProp
   return (
     <article
       onClick={handleCardClick}
-      className="flex cursor-pointer border-b border-gray-200 p-4 transition hover:bg-gray-50/60"
+      className="flex cursor-pointer border-b border-gray-200 px-4 pt-3 pb-1.5 transition hover:bg-gray-50/60"
     >
       {/* アバター */}
       <div className="mr-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -164,21 +164,21 @@ export default function PostCard({ post, currentUserId, onDelete }: PostCardProp
           )}
         </div>
 
-        <p className="mt-1 whitespace-pre-wrap break-words text-[15px] text-gray-800 leading-relaxed">
+        <p className="mt-0.5 whitespace-pre-wrap break-words text-[15px] text-gray-800 leading-normal">
           {post.content}
         </p>
 
         {/* アクションボタン群（リプライ & いいね） */}
-        <div className="mt-3 flex items-center gap-8 text-gray-500 text-xs">
+        <div className="mt-1.5 -ml-1 flex items-center gap-6 text-gray-500 text-xs">
           {/* リプライボタン */}
           <button
             onClick={(e) => {
               e.stopPropagation();
               router.push(`/posts/${post.id}`);
             }}
-            className="flex items-center gap-1.5 hover:text-sky-500 transition group"
+            className="flex items-center gap-1 hover:text-sky-500 transition group"
           >
-            <div className="rounded-full p-1.5 group-hover:bg-sky-50">
+            <div className="rounded-full p-1 group-hover:bg-sky-50">
               <MessageCircle className="h-4 w-4" />
             </div>
             <span>{repliesCount}</span>
@@ -187,15 +187,13 @@ export default function PostCard({ post, currentUserId, onDelete }: PostCardProp
           {/* いいねボタン */}
           <button
             onClick={handleToggleLike}
-            className={`flex items-center gap-1.5 transition group ${
-              isLiked ? 'text-pink-600' : 'hover:text-pink-600'
-            }`}
+            className={`flex items-center gap-1 transition group ${isLiked ? 'text-pink-600' : 'hover:text-pink-600'
+              }`}
           >
-            <div className="rounded-full p-1.5 group-hover:bg-pink-50">
+            <div className="rounded-full p-1 group-hover:bg-pink-50">
               <Heart
-                className={`h-4 w-4 transition ${
-                  isLiked ? 'fill-pink-600 text-pink-600' : ''
-                }`}
+                className={`h-4 w-4 transition ${isLiked ? 'fill-pink-600 text-pink-600' : ''
+                  }`}
               />
             </div>
             <span>{likesCount}</span>
