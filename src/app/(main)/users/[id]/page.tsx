@@ -10,6 +10,7 @@ type UserProfile = {
   id: string;
   display_name: string;
   avatar_url?: string | null;
+  bio?: string | null;
 };
 
 type Stats = {
@@ -28,6 +29,8 @@ export default function UserDetailPage({
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<PostItem[]>([]);
+  const [likedPosts, setLikedPosts] = useState<PostItem[]>([]);
+  const [activeTab, setActiveTab] = useState<'posts' | 'likes'>('posts');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [stats, setStats] = useState<Stats>({
@@ -36,6 +39,7 @@ export default function UserDetailPage({
     postsCount: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [loadingLikes, setLoadingLikes] = useState(false);
 
   const fetchUserData = useCallback(async () => {
     setLoading(true);
@@ -49,7 +53,7 @@ export default function UserDetailPage({
       // 1. 対象ユーザーのプロフィール取得
       const { data: profileData, error: profError } = await supabase
         .from('profiles')
-        .select('id, display_name, avatar_url')
+        .select('id, display_name, avatar_url, bio')
         .eq('id', targetUserId)
         .single();
 
@@ -107,7 +111,8 @@ export default function UserDetailPage({
           profiles (
             id,
             display_name,
-            avatar_url
+            avatar_url,
+            bio
           ),
           likes (
             user_id
@@ -129,9 +134,61 @@ export default function UserDetailPage({
     }
   }, [targetUserId]);
 
+  // いいねした投稿の取得
+  const fetchLikedPosts = useCallback(async () => {
+    setLoadingLikes(true);
+    try {
+      const { data, error } = await supabase
+        .from('likes')
+        .select(`
+          created_at,
+          posts (
+            id,
+            content,
+            images,
+            created_at,
+            user_id,
+            reply_to_id,
+            profiles (
+              id,
+              display_name,
+              avatar_url,
+              bio
+            ),
+            likes (
+              user_id
+            ),
+            replies:posts!reply_to_id (
+              id
+            )
+          )
+        `)
+        .eq('user_id', targetUserId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedPosts = (data || [])
+        .map((item) => item.posts)
+        .filter(Boolean) as unknown as PostItem[];
+
+      setLikedPosts(formattedPosts);
+    } catch (err) {
+      console.error('Failed to fetch liked posts:', err);
+    } finally {
+      setLoadingLikes(false);
+    }
+  }, [targetUserId]);
+
   useEffect(() => {
     fetchUserData();
   }, [fetchUserData, refreshKey]);
+
+  useEffect(() => {
+    if (activeTab === 'likes') {
+      fetchLikedPosts();
+    }
+  }, [activeTab, fetchLikedPosts]);
 
   const handleFollowChange = (nextIsFollowing: boolean) => {
     setIsFollowing(nextIsFollowing);
@@ -145,6 +202,7 @@ export default function UserDetailPage({
 
   const handleDeletePost = (deletedPostId: string) => {
     setPosts((prev) => prev.filter((p) => p.id !== deletedPostId));
+    setLikedPosts((prev) => prev.filter((p) => p.id !== deletedPostId));
     setStats((prev) => ({ ...prev, postsCount: Math.max(0, prev.postsCount - 1) }));
   };
 
@@ -156,6 +214,8 @@ export default function UserDetailPage({
     return <div className="p-8 text-center text-sm text-gray-500">ユーザーが存在しません。</div>;
   }
 
+  const currentDisplayPosts = activeTab === 'posts' ? posts : likedPosts;
+
   return (
     <div>
       <ProfileHeader
@@ -166,11 +226,44 @@ export default function UserDetailPage({
         onFollowChange={handleFollowChange}
       />
 
+      {/* タブ切り替え */}
+      <div className="flex border-b border-gray-200">
+        <button
+          type="button"
+          onClick={() => setActiveTab('posts')}
+          className={`flex-1 py-3 text-center text-sm font-bold transition hover:bg-gray-50 ${
+            activeTab === 'posts'
+              ? 'border-b-2 border-sky-500 text-sky-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          ポスト
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('likes')}
+          className={`flex-1 py-3 text-center text-sm font-bold transition hover:bg-gray-50 ${
+            activeTab === 'likes'
+              ? 'border-b-2 border-sky-500 text-sky-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          いいね
+        </button>
+      </div>
+
+      {/* 投稿リスト */}
       <div className="divide-y divide-gray-100">
-        {posts.length === 0 ? (
-          <div className="p-8 text-center text-sm text-gray-500">まだポストがありません。</div>
+        {activeTab === 'likes' && loadingLikes ? (
+          <div className="p-8 text-center text-sm text-gray-500">いいねを読み込み中...</div>
+        ) : currentDisplayPosts.length === 0 ? (
+          <div className="p-8 text-center text-sm text-gray-500">
+            {activeTab === 'posts'
+              ? 'まだポストがありません。'
+              : 'まだいいねしたポストがありません。'}
+          </div>
         ) : (
-          posts.map((post) => (
+          currentDisplayPosts.map((post) => (
             <PostCard
               key={post.id}
               post={post}

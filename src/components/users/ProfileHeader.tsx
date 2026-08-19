@@ -12,6 +12,7 @@ type ProfileHeaderProps = {
     id: string;
     display_name: string;
     avatar_url?: string | null;
+    bio?: string | null;
   };
   stats: {
     followingCount: number;
@@ -70,6 +71,12 @@ export default function ProfileHeader({
           <h2 className="text-xl font-bold text-gray-900">{profile.display_name}</h2>
           <p className="text-xs font-mono text-gray-400">ID: {profile.id}</p>
         </div>
+
+        {profile.bio && (
+          <p className="mt-3 whitespace-pre-wrap break-words text-sm text-gray-800 leading-relaxed">
+            {profile.bio}
+          </p>
+        )}
 
         {/* フォロー中・フォロワーのクリック可能な数値エリア */}
         <div className="mt-4 flex gap-4 text-sm">

@@ -8,6 +8,7 @@ import Avatar from '@/components/common/Avatar';
 import ImageCropperModal from '@/components/users/ImageCropperModal';
 
 const MAX_DISPLAY_NAME_LENGTH = 50;
+const MAX_BIO_LENGTH = 160;
 const MAX_PASSWORD_LENGTH = 72;
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
@@ -16,6 +17,7 @@ export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [displayName, setDisplayName] = useState('');
+  const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -55,13 +57,14 @@ export default function SettingsPage() {
 
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('display_name, avatar_url')
+          .select('display_name, avatar_url, bio')
           .eq('id', user.id)
           .single();
 
         if (error) throw error;
         if (profile) {
           setDisplayName(profile.display_name || '');
+          setBio(profile.bio || '');
           setAvatarUrl(profile.avatar_url || null);
         }
       } catch (err: any) {
@@ -150,6 +153,7 @@ export default function SettingsPage() {
         .from('profiles')
         .update({
           display_name: displayName.trim(),
+          bio: bio.trim(),
           avatar_url: finalAvatarUrl,
           updated_at: new Date().toISOString(),
         })
@@ -332,6 +336,33 @@ export default function SettingsPage() {
             />
             <p className="mt-1 text-xs text-gray-400">
               タイムラインやプロフィール画面で表示される名前です。
+            </p>
+          </div>
+
+          {/* 自己紹介（ステータスメッセージ）設定 */}
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-bold text-gray-700">
+                自己紹介（ステータスメッセージ）
+              </label>
+              <span
+                className={`text-xs ${
+                  bio.length > MAX_BIO_LENGTH ? 'font-bold text-red-500' : 'text-gray-400'
+                }`}
+              >
+                {bio.length} / {MAX_BIO_LENGTH}
+              </span>
+            </div>
+            <textarea
+              rows={3}
+              maxLength={MAX_BIO_LENGTH}
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="自己紹介やステータスメッセージを入力"
+              className="mt-2 w-full resize-none rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-sky-500"
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              プロフィール画面に表示されます。
             </p>
           </div>
 
