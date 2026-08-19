@@ -4,6 +4,7 @@ import { use, useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import ProfileHeader from '@/components/users/ProfileHeader';
 import PostCard, { PostItem } from '@/components/posts/PostCard';
+import { usePostModal } from '@/context/PostModalContext';
 
 type UserProfile = {
   id: string;
@@ -23,6 +24,7 @@ export default function UserDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id: targetUserId } = use(params);
+  const { refreshKey } = usePostModal();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<PostItem[]>([]);
@@ -129,7 +131,7 @@ export default function UserDetailPage({
 
   useEffect(() => {
     fetchUserData();
-  }, [fetchUserData]);
+  }, [fetchUserData, refreshKey]);
 
   const handleFollowChange = (nextIsFollowing: boolean) => {
     setIsFollowing(nextIsFollowing);
