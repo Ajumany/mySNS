@@ -35,13 +35,17 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isAuthPage = request.nextUrl.pathname.startsWith('/login');
+  const isLoginPage = request.nextUrl.pathname.startsWith('/login');
+  const isResetPasswordPage = request.nextUrl.pathname.startsWith('/reset-password');
+  const isAuthCallback = request.nextUrl.pathname.startsWith('/auth');
 
-  if (!user && !isAuthPage) {
+  // 未ログインユーザーの制御
+  if (!user && !isLoginPage && !isAuthCallback) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  if (user && isAuthPage) {
+  // ログイン済みユーザーがログインページを開いた場合はホームへ（パスワード再設定画面は許可）
+  if (user && isLoginPage) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
