@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
+const MAX_DISPLAY_NAME_LENGTH = 50;
+
 export default function SettingsPage() {
   const router = useRouter();
   const [displayName, setDisplayName] = useState('');
@@ -50,7 +52,7 @@ export default function SettingsPage() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userId || !displayName.trim() || saving) return;
+    if (!userId || !displayName.trim() || displayName.trim().length > MAX_DISPLAY_NAME_LENGTH || saving) return;
 
     setSaving(true);
     setErrorMsg('');
@@ -128,6 +130,7 @@ export default function SettingsPage() {
             <input
               type="text"
               required
+              maxLength={MAX_DISPLAY_NAME_LENGTH}
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="表示名を入力"

@@ -25,6 +25,9 @@ export default function LoginPage() {
         if (!displayName.trim()) {
           throw new Error('表示名を入力してください。');
         }
+        if (displayName.trim().length > 50) {
+          throw new Error('表示名は50文字以内で入力してください。');
+        }
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -136,6 +139,7 @@ export default function LoginPage() {
               <input
                 type="text"
                 required
+                maxLength={50}
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="例: あずま"
