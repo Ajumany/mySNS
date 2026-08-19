@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Trash2, Heart, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import Avatar from '@/components/common/Avatar';
 
 export type PostItem = {
   id: string;
@@ -15,6 +16,7 @@ export type PostItem = {
   profiles: {
     id: string;
     display_name: string;
+    avatar_url?: string | null;
   } | null;
   likes?: { user_id: string }[];
   replies?: { id: string }[];
@@ -130,9 +132,13 @@ export default function PostCard({ post, currentUserId, onDelete }: PostCardProp
       <div className="mr-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
         <Link
           href={`/users/${post.user_id}`}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 text-sm font-bold text-sky-600 hover:opacity-80"
+          className="block hover:opacity-80 transition"
         >
-          {displayName.slice(0, 1).toUpperCase()}
+          <Avatar
+            src={post.profiles?.avatar_url}
+            name={displayName}
+            size="md"
+          />
         </Link>
       </div>
 

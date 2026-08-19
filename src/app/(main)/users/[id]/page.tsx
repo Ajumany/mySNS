@@ -8,6 +8,7 @@ import PostCard, { PostItem } from '@/components/posts/PostCard';
 type UserProfile = {
   id: string;
   display_name: string;
+  avatar_url?: string | null;
 };
 
 type Stats = {
@@ -46,7 +47,7 @@ export default function UserDetailPage({
       // 1. 対象ユーザーのプロフィール取得
       const { data: profileData, error: profError } = await supabase
         .from('profiles')
-        .select('id, display_name')
+        .select('id, display_name, avatar_url')
         .eq('id', targetUserId)
         .single();
 
@@ -102,7 +103,8 @@ export default function UserDetailPage({
           reply_to_id,
           profiles (
             id,
-            display_name
+            display_name,
+            avatar_url
           ),
           likes (
             user_id

@@ -1,15 +1,24 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Camera, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import Avatar from '@/components/common/Avatar';
 
 const MAX_DISPLAY_NAME_LENGTH = 50;
+const MAX_AVATAR_SIZE = 2 * 1024 * 1024; // 2MB
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export default function SettingsPage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [displayName, setDisplayName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -32,13 +41,14 @@ export default function SettingsPage() {
 
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('display_name')
+          .select('display_name, avatar_url')
           .eq('id', user.id)
           .single();
 
         if (error) throw error;
         if (profile) {
-          setDisplayName(profile.display_name);
+          setDisplayName(profile.display_name || '');
+          setAvatarUrl(profile.avatar_url || null);
         }
       } catch (err: any) {
         console.error('Failed to load profile:', err);
@@ -50,6 +60,39 @@ export default function SettingsPage() {
     loadProfile();
   }, [router]);
 
+  // 画像ファイル選択処理
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setErrorMsg('');
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // ファイル形式バリデーション
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setErrorMsg('JPG、PNG、WebP、GIF形式の画像を選択してください。');
+      return;
+    }
+
+    // ファイルサイズバリデーション (2MB上限)
+    if (file.size > MAX_AVATAR_SIZE) {
+      setErrorMsg('画像サイズは2MB以下にしてください。');
+      return;
+    }
+
+    setAvatarFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+  };
+
+  // 画像の削除（頭文字デフォルトに戻す）
+  const handleRemoveAvatar = () => {
+    setAvatarFile(null);
+    setPreviewUrl(null);
+    setAvatarUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId || !displayName.trim() || displayName.trim().length > MAX_DISPLAY_NAME_LENGTH || saving) return;
@@ -59,19 +102,47 @@ export default function SettingsPage() {
     setSuccessMsg(false);
 
     try {
-      const { error } = await supabase
+      let finalAvatarUrl = avatarUrl;
+
+      // 新しい画像ファイルが選択されている場合は Storage にアップロード
+      if (avatarFile) {
+        const fileExt = avatarFile.name.split('.').pop() || 'png';
+        const filePath = `${userId}/${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, avatarFile, {
+            cacheControl: '3600',
+            upsert: true,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from('avatars').getPublicUrl(filePath);
+
+        finalAvatarUrl = publicUrl;
+      }
+
+      const { error: updateError } = await supabase
         .from('profiles')
         .update({
           display_name: displayName.trim(),
+          avatar_url: finalAvatarUrl,
           updated_at: new Date().toISOString(),
         })
         .eq('id', userId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
+      setAvatarUrl(finalAvatarUrl);
+      setAvatarFile(null);
+      setPreviewUrl(null);
       setSuccessMsg(true);
       router.refresh();
     } catch (err: any) {
+      console.error('Update profile error:', err);
       setErrorMsg(err.message || '更新に失敗しました。');
     } finally {
       setSaving(false);
@@ -80,10 +151,10 @@ export default function SettingsPage() {
 
   // ログアウト処理
   const handleSignOut = async () => {
-  if (!confirm('ログアウトしますか？')) return;
-  await supabase.auth.signOut();
-  window.location.href = '/login'; // キャッシュを破棄して確実に画面遷移
-};
+    if (!confirm('ログアウトしますか？')) return;
+    await supabase.auth.signOut();
+    window.location.href = '/login';
+  };
 
   if (loading) {
     return (
@@ -92,6 +163,8 @@ export default function SettingsPage() {
       </div>
     );
   }
+
+  const currentDisplayAvatar = previewUrl || avatarUrl;
 
   return (
     <div>
@@ -123,6 +196,67 @@ export default function SettingsPage() {
         )}
 
         <form onSubmit={handleUpdate} className="space-y-6">
+          {/* アイコン画像設定 */}
+          <div>
+            <label className="block text-sm font-bold text-gray-700">
+              アイコン画像
+            </label>
+
+            <div className="mt-3 flex items-center gap-4">
+              <div className="relative group">
+                <Avatar
+                  src={currentDisplayAvatar}
+                  name={displayName || 'U'}
+                  size="xl"
+                  className="shadow-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-white opacity-0 transition group-hover:opacity-100"
+                  aria-label="画像を変更"
+                >
+                  <Camera className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 shadow-sm transition hover:bg-gray-50"
+                  >
+                    画像を選択
+                  </button>
+
+                  {currentDisplayAvatar && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveAvatar}
+                      className="flex items-center gap-1 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-bold text-red-600 shadow-sm transition hover:bg-red-50"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      削除
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400">
+                  2MB以下の JPG / PNG / WebP / GIF
+                </p>
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </div>
+          </div>
+
+          {/* 表示名設定 */}
           <div>
             <label className="block text-sm font-bold text-gray-700">
               表示名

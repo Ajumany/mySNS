@@ -44,7 +44,8 @@ export default function Timeline() {
           reply_to_id,
           profiles (
             id,
-            display_name
+            display_name,
+            avatar_url
           ),
           likes (
             user_id

@@ -5,11 +5,13 @@ import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import FollowButton from './FollowButton';
 import FollowListModal from './FollowListModal';
+import Avatar from '@/components/common/Avatar';
 
 type ProfileHeaderProps = {
   profile: {
     id: string;
     display_name: string;
+    avatar_url?: string | null;
   };
   stats: {
     followingCount: number;
@@ -51,9 +53,11 @@ export default function ProfileHeader({
       {/* プロフィール情報エリア */}
       <div className="border-b border-gray-200 p-4">
         <div className="flex items-start justify-between">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-sky-100 text-2xl font-bold text-sky-600">
-            {profile.display_name.slice(0, 1).toUpperCase()}
-          </div>
+          <Avatar
+            src={profile.avatar_url}
+            name={profile.display_name}
+            size="xl"
+          />
           <FollowButton
             targetUserId={profile.id}
             initialIsFollowing={isFollowing}

@@ -2,12 +2,14 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Search as SearchIcon, User } from 'lucide-react';
+import { Search as SearchIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import Avatar from '@/components/common/Avatar';
 
 type Profile = {
   id: string;
   display_name: string;
+  avatar_url?: string | null;
 };
 
 export default function SearchPage() {
@@ -24,7 +26,7 @@ export default function SearchPage() {
       } = await supabase.auth.getUser();
       if (user) setCurrentUserId(user.id);
 
-      let req = supabase.from('profiles').select('id, display_name').limit(30);
+      let req = supabase.from('profiles').select('id, display_name, avatar_url').limit(30);
 
       if (query.trim()) {
         // 表示名であいまい検索
@@ -82,9 +84,11 @@ export default function SearchPage() {
                 className="flex items-center justify-between p-4 transition hover:bg-gray-50"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-sky-100 font-bold text-sky-600">
-                    {profile.display_name.slice(0, 1).toUpperCase()}
-                  </div>
+                  <Avatar
+                    src={profile.avatar_url}
+                    name={profile.display_name}
+                    size="lg"
+                  />
                   <div className="truncate">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-gray-900 truncate">

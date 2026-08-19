@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import Avatar from '@/components/common/Avatar';
 
 type FollowListModalProps = {
   isOpen: boolean;
@@ -15,6 +16,7 @@ type FollowListModalProps = {
 type Profile = {
   id: string;
   display_name: string;
+  avatar_url?: string | null;
 };
 
 export default function FollowListModal({
@@ -39,7 +41,8 @@ export default function FollowListModal({
             .select(`
               profiles!follows_following_id_fkey (
                 id,
-                display_name
+                display_name,
+                avatar_url
               )
             `)
             .eq('follower_id', userId);
@@ -56,7 +59,8 @@ export default function FollowListModal({
             .select(`
               profiles!follows_follower_id_fkey (
                 id,
-                display_name
+                display_name,
+                avatar_url
               )
             `)
             .eq('following_id', userId);
@@ -111,9 +115,11 @@ export default function FollowListModal({
                 onClick={onClose}
                 className="flex items-center gap-3 p-3 transition hover:bg-gray-50"
               >
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-sky-100 font-bold text-sky-600">
-                  {u.display_name.slice(0, 1).toUpperCase()}
-                </div>
+                <Avatar
+                  src={u.avatar_url}
+                  name={u.display_name}
+                  size="md"
+                />
                 <div className="min-w-0">
                   <div className="font-bold text-gray-900 truncate">
                     {u.display_name}
