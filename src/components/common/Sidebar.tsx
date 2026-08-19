@@ -23,16 +23,16 @@ export default function Sidebar() {
   }, []);
 
   const handleSignOut = async () => {
-  if (!confirm('ログアウトしますか？')) return;
-  await supabase.auth.signOut();
-  window.location.href = '/login';
+    if (!confirm('ログアウトしますか？')) return;
+    await supabase.auth.signOut();
+    window.location.href = '/login';
   };
 
   return (
     <aside className="sticky top-0 hidden h-screen w-60 flex-col justify-between border-r border-gray-200 p-4 md:flex">
       <div className="space-y-4">
         <div className="px-3 py-2 text-xl font-black text-sky-500 tracking-wider">
-          SNS
+          mySNS
         </div>
 
         <nav className="space-y-1">

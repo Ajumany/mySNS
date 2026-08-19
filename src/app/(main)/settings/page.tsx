@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, CheckCircle2, Camera, Trash2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Camera, Trash2, Lock, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Avatar from '@/components/common/Avatar';
 import ImageCropperModal from '@/components/users/ImageCropperModal';
 
 const MAX_DISPLAY_NAME_LENGTH = 50;
+const MAX_PASSWORD_LENGTH = 72;
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export default function SettingsPage() {
@@ -18,6 +19,14 @@ export default function SettingsPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // パスワード変更用 state
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordSuccessMsg, setPasswordSuccessMsg] = useState(false);
+  const [passwordErrorMsg, setPasswordErrorMsg] = useState('');
 
   // クロップモーダル用 state
   const [cropModalOpen, setCropModalOpen] = useState(false);
@@ -161,6 +170,48 @@ export default function SettingsPage() {
     }
   };
 
+  // パスワード変更処理
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordSaving) return;
+
+    if (newPassword.length < 6) {
+      setPasswordErrorMsg('パスワードは6文字以上で入力してください。');
+      return;
+    }
+
+    if (newPassword.length > MAX_PASSWORD_LENGTH) {
+      setPasswordErrorMsg(`パスワードは${MAX_PASSWORD_LENGTH}文字以内で入力してください。`);
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordErrorMsg('パスワードが一致しません。');
+      return;
+    }
+
+    setPasswordSaving(true);
+    setPasswordErrorMsg('');
+    setPasswordSuccessMsg(false);
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+
+      setPasswordSuccessMsg(true);
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      console.error('Update password error:', err);
+      setPasswordErrorMsg(err.message || 'パスワードの変更に失敗しました。');
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
   // ログアウト処理
   const handleSignOut = async () => {
     if (!confirm('ログアウトしますか？')) return;
@@ -295,8 +346,85 @@ export default function SettingsPage() {
           </div>
         </form>
 
+        {/* パスワード変更セクション */}
+        <div className="mt-10 border-t border-gray-200 pt-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Lock className="h-5 w-5 text-gray-700" />
+            <h2 className="text-base font-bold text-gray-900">パスワード変更</h2>
+          </div>
+
+          {passwordSuccessMsg && (
+            <div className="mb-4 flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-700">
+              <CheckCircle2 className="h-4 w-4" />
+              パスワードを更新しました。
+            </div>
+          )}
+
+          {passwordErrorMsg && (
+            <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+              {passwordErrorMsg}
+            </div>
+          )}
+
+          <form onSubmit={handleUpdatePassword} className="space-y-4">
+            <div>
+              <label className="block text-sm font-bold text-gray-700">
+                新しいパスワード
+              </label>
+              <div className="relative mt-2">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  maxLength={MAX_PASSWORD_LENGTH}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="6文字以上の新しいパスワード"
+                  className="w-full rounded-lg border border-gray-300 p-2.5 pr-10 text-sm outline-none focus:border-sky-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  aria-label={showPassword ? 'パスワードを隠す' : 'パスワードを表示'}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-700">
+                新しいパスワード（確認用）
+              </label>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                maxLength={MAX_PASSWORD_LENGTH}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="もう一度パスワードを入力"
+                className="mt-2 w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-sky-500"
+              />
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                disabled={passwordSaving || !newPassword || !confirmPassword}
+                className="rounded-full bg-sky-500 px-6 py-2 text-sm font-bold text-white transition hover:bg-sky-600 disabled:opacity-50"
+              >
+                {passwordSaving ? '変更中...' : 'パスワードを変更'}
+              </button>
+            </div>
+          </form>
+        </div>
+
         {/* ログアウトボタンエリア */}
-        <div className="mt-8 border-t border-gray-200 pt-6">
+        <div className="mt-10 border-t border-gray-200 pt-6">
           <button
             type="button"
             onClick={handleSignOut}
