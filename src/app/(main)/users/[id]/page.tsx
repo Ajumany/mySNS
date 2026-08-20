@@ -72,7 +72,7 @@ export default function UserDetailPage({
         setIsFollowing(!!followRel);
       }
 
-      // 3. カウント集計（フォロー中数・フォロワー数・投稿数）
+      // 3. カウント集計（フォロー中数・フォロワー数・全体投稿数）
       const [
         { count: followingCount },
         { count: followersCount },
@@ -89,7 +89,8 @@ export default function UserDetailPage({
         supabase
           .from('posts')
           .select('*', { count: 'exact', head: true })
-          .eq('user_id', targetUserId),
+          .eq('user_id', targetUserId)
+          .is('group_id', null),
       ]);
 
       setStats({
@@ -98,7 +99,7 @@ export default function UserDetailPage({
         postsCount: postsCount || 0,
       });
 
-      // 4. 対象ユーザーの過去投稿一覧取得
+      // 4. 対象ユーザーの全体向け過去投稿一覧取得 (group_id is null)
       const { data: userPosts, error: postsError } = await supabase
         .from('posts')
         .select(`
@@ -108,6 +109,7 @@ export default function UserDetailPage({
           created_at,
           user_id,
           reply_to_id,
+          group_id,
           profiles (
             id,
             display_name,
@@ -123,6 +125,7 @@ export default function UserDetailPage({
         `)
         .eq('user_id', targetUserId)
         .is('reply_to_id', null) // 親投稿のみ表示
+        .is('group_id', null) // グループ投稿は除外（全体投稿のみ）
         .order('created_at', { ascending: false });
 
       if (postsError) throw postsError;
@@ -134,7 +137,7 @@ export default function UserDetailPage({
     }
   }, [targetUserId]);
 
-  // いいねした投稿の取得
+  // いいねした投稿の取得（全体向け投稿のみ）
   const fetchLikedPosts = useCallback(async () => {
     setLoadingLikes(true);
     try {
@@ -149,6 +152,7 @@ export default function UserDetailPage({
             created_at,
             user_id,
             reply_to_id,
+            group_id,
             profiles (
               id,
               display_name,
@@ -170,7 +174,8 @@ export default function UserDetailPage({
 
       const formattedPosts = (data || [])
         .map((item) => item.posts)
-        .filter(Boolean) as unknown as PostItem[];
+        .filter(Boolean)
+        .filter((post: any) => !post.group_id) as unknown as PostItem[];
 
       setLikedPosts(formattedPosts);
     } catch (err) {
