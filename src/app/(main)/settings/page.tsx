@@ -341,18 +341,9 @@ export default function SettingsPage() {
 
           {/* 自己紹介（ステータスメッセージ）設定 */}
           <div>
-            <div className="flex items-center justify-between">
-              <label className="block text-sm font-bold text-gray-700">
-                自己紹介（ステータスメッセージ）
-              </label>
-              <span
-                className={`text-xs ${
-                  bio.length > MAX_BIO_LENGTH ? 'font-bold text-red-500' : 'text-gray-400'
-                }`}
-              >
-                {bio.length} / {MAX_BIO_LENGTH}
-              </span>
-            </div>
+            <label className="block text-sm font-bold text-gray-700">
+              自己紹介（ステータスメッセージ）
+            </label>
             <textarea
               rows={3}
               maxLength={MAX_BIO_LENGTH}

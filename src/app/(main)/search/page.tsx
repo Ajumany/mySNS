@@ -58,6 +58,7 @@ export default function SearchPage() {
           <SearchIcon className="absolute left-3 h-4 w-4 text-gray-400" />
           <input
             type="text"
+            maxLength={50}
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder="ユーザー名で検索..."
