@@ -14,7 +14,7 @@ type ImageItem = {
 };
 
 export default function PostModal() {
-  const { isOpen, closeModal, triggerRefresh } = usePostModal();
+  const { isOpen, closeModal, triggerRefresh, activeGroupId, activeGroupName } = usePostModal();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [content, setContent] = useState('');
@@ -113,6 +113,7 @@ export default function PostModal() {
         user_id: user.id,
         content: content.trim(),
         images: uploadedImageUrls,
+        group_id: activeGroupId || null,
       });
 
       if (insertError) throw insertError;
@@ -140,7 +141,9 @@ export default function PostModal() {
           >
             <X className="h-5 w-5" />
           </button>
-          <span className="text-sm font-medium text-gray-700">新しい投稿</span>
+          <span className="text-sm font-medium text-gray-700">
+            {activeGroupId ? `${activeGroupName} へポスト` : '新しい投稿'}
+          </span>
           <div className="w-6" />
         </div>
 

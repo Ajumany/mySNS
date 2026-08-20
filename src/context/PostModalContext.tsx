@@ -8,6 +8,9 @@ type PostModalContextType = {
   closeModal: () => void;
   refreshKey: number;
   triggerRefresh: () => void;
+  activeGroupId: string | null;
+  activeGroupName: string | null;
+  setActiveGroup: (id: string | null, name: string | null) => void;
 };
 
 const PostModalContext = createContext<PostModalContextType | undefined>(undefined);
@@ -15,9 +18,16 @@ const PostModalContext = createContext<PostModalContextType | undefined>(undefin
 export function PostModalProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+  const [activeGroupName, setActiveGroupName] = useState<string | null>(null);
 
   const triggerRefresh = () => {
     setRefreshKey((prev) => prev + 1);
+  };
+
+  const setActiveGroup = (id: string | null, name: string | null) => {
+    setActiveGroupId(id);
+    setActiveGroupName(name);
   };
 
   return (
@@ -28,6 +38,9 @@ export function PostModalProvider({ children }: { children: ReactNode }) {
         closeModal: () => setIsOpen(false),
         refreshKey,
         triggerRefresh,
+        activeGroupId,
+        activeGroupName,
+        setActiveGroup,
       }}
     >
       {children}

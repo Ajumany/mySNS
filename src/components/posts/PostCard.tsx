@@ -14,6 +14,7 @@ export type PostItem = {
   created_at: string;
   user_id: string;
   reply_to_id?: string | null;
+  group_id?: string | null;
   images?: string[] | null;
   profiles: {
     id: string;
